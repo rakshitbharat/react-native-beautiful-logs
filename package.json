@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "validate": "npm run lint && npm run typecheck && npm run test",
     "ci": "npm run validate && npm run build",
-    "build:validate": "npm run build && node scripts/validate-build.js",
+    "build:validate": "npm run build && node scripts/validate-build.cjs",
     "clean": "rm -rf lib coverage",
     "prebuild": "npm run clean",
     "dev": "npm run build:watch"
