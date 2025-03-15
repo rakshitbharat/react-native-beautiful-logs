@@ -3,9 +3,9 @@
 <div align="center">
   <img src="https://img.shields.io/npm/v/react-native-beautiful-logs" alt="npm version" />
   <img src="https://img.shields.io/npm/dt/react-native-beautiful-logs" alt="downloads" />
-  <img src="https://img.shields.io/github/license/rakshitbharat/react-native-beautiful-log" alt="license" />
-  <img src="https://img.shields.io/github/issues/rakshitbharat/react-native-beautiful-log" alt="issues" />
-  <img src="https://img.shields.io/github/stars/rakshitbharat/react-native-beautiful-log" alt="stars" />
+  <img src="https://img.shields.io/github/license/rakshitbharat/react-native-beautiful-logs" alt="license" />
+  <img src="https://img.shields.io/github/issues/rakshitbharat/react-native-beautiful-logs" alt="issues" />
+  <img src="https://img.shields.io/github/stars/rakshitbharat/react-native-beautiful-logs" alt="stars" />
 </div>
 
 <p align="center">
