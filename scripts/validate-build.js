@@ -1,12 +1,13 @@
 // @ts-check
-import { strict as assert } from 'assert';
-import { Logger, utils } from '../lib/index.js';
+/* eslint-disable @typescript-eslint/no-var-requires */
+const assert = require('assert').strict;
+const { Logger, utils } = require('../lib/index.js');
 
 try {
   // Validate basic exports
   assert(typeof Logger === 'function', 'Logger class not exported correctly');
   assert(typeof utils === 'object', 'Utils not exported correctly');
-  assert(typeof utils.formatLogEntry === 'function', 'formatLogEntry not exported correctly');
+  assert(typeof utils.formatMessage === 'function', 'formatMessage not exported correctly');
 
   // Try to instantiate Logger
   const instance = Logger.getInstance();

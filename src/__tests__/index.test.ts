@@ -11,27 +11,21 @@ jest.mock('react-native', () => ({
 
 // Mock Logger class
 jest.mock('../Logger', () => {
-  class MockLogger {
-    log = jest.fn();
-    loggerInterface = {
+  const mockLoggerInstance = {
+    log: jest.fn(),
+    loggerInterface: {
       getLogFiles: jest.fn(),
       getCurrentSessionLog: jest.fn(),
       readLogFile: jest.fn(),
       deleteLogFile: jest.fn(),
       deleteAllLogs: jest.fn(),
       cleanupCurrentSession: jest.fn(),
-    };
-  }
-  const mockInstance = new MockLogger();
-
-  // Make instanceof work
-  MockLogger.prototype.constructor = Logger;
-  Object.setPrototypeOf(MockLogger.prototype, Logger.prototype);
-  Object.setPrototypeOf(mockInstance, MockLogger.prototype);
+    },
+  };
 
   return {
     Logger: {
-      getInstance: jest.fn(() => mockInstance),
+      getInstance: jest.fn(() => mockLoggerInstance),
     },
   };
 });
@@ -121,8 +115,10 @@ describe('Public API', () => {
 
   it('should export Logger class', () => {
     expect(typeof Logger).toBe('object');
-    const logger: Logger = Logger.getInstance();
-    expect(logger).toBeInstanceOf(Logger);
+    const logger = Logger.getInstance();
+    expect(logger).toBeDefined();
+    expect(typeof logger.log).toBe('function');
+    expect(typeof logger.loggerInterface).toBe('object');
   });
 
   it('should export utils', () => {
