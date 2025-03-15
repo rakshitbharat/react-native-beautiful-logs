@@ -1,6 +1,6 @@
 {
   "name": "react-native-beautiful-logs",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A beautiful, feature-rich logging library for React Native applications with colored output and file persistence",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
