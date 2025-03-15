@@ -1,7 +1,6 @@
 // @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
-const assert = require('assert').strict;
-const { Logger, utils } = require('../lib/index.js');
+import assert from 'node:assert/strict';
+import { Logger, utils } from '../lib/index.js';
 
 try {
   // Validate basic exports
