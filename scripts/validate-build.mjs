@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 const assert = require('node:assert/strict');
-const { createRequire } = require('module');
-const require = createRequire(import.meta.url);
+const path = require('path');
 
 (async () => {
   try {
-    const { Logger, utils } = require('../lib/index.js');
+    // Using dynamic import but with CommonJS require for other modules
+    const lib = require('../lib/index.js');
+    const { Logger, utils } = lib;
     
     // Validate basic exports
     assert(typeof Logger === 'function', 'Logger class not exported correctly');
