@@ -40,10 +40,7 @@ export const FALLBACK_DIRS = Platform.select({
     ReactNativeBlobUtil.fs.dirs.DocumentDir,
     ReactNativeBlobUtil.fs.dirs.MainBundleDir,
   ],
-  ios: [
-    ReactNativeBlobUtil.fs.dirs.DocumentDir,
-    ReactNativeBlobUtil.fs.dirs.CacheDir,
-  ],
+  ios: [ReactNativeBlobUtil.fs.dirs.DocumentDir, ReactNativeBlobUtil.fs.dirs.CacheDir],
 });
 
 export const DEFAULT_CONFIG = {

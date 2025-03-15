@@ -3,16 +3,19 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { 
-      isolatedModules: true,
-      tsconfig: {
-        jsx: 'react'
-      }
-    }],
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        isolatedModules: true,
+        tsconfig: {
+          jsx: 'react',
+        },
+      },
+    ],
   },
   moduleNameMapper: {
     '^react-native$': '<rootDir>/src/__tests__/__mocks__/react-native.ts',
-    '^react-native-blob-util$': '<rootDir>/src/__tests__/__mocks__/react-native-blob-util.ts'
+    '^react-native-blob-util$': '<rootDir>/src/__tests__/__mocks__/react-native-blob-util.ts',
   },
   collectCoverage: true,
   coverageDirectory: 'coverage',
@@ -28,5 +31,5 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-blob-util)/)',
   ],
-  moduleDirectories: ['node_modules', '<rootDir>/src']
+  moduleDirectories: ['node_modules', '<rootDir>/src'],
 };

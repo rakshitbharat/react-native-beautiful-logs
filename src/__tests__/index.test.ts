@@ -5,7 +5,7 @@ import { Logger } from '../Logger';
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
-    select: jest.fn((obj) => obj.ios),
+    select: jest.fn(obj => obj.ios),
   },
 }));
 
@@ -31,11 +31,11 @@ jest.mock('../Logger', () => {
 });
 
 describe('Public API', () => {
-  let mockLogger: any;
+  let mockLogger: Logger;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLogger = (Logger as any).getInstance();
+    mockLogger = Logger.getInstance();
   });
 
   describe('log level functions', () => {
@@ -110,6 +110,19 @@ describe('Public API', () => {
       const interface1 = getLoggerInterface();
       const interface2 = getLoggerInterface();
       expect(interface1).toBe(interface2);
+    });
+  });
+
+  it('should export Logger class', () => {
+    expect(typeof Logger).toBe('function');
+    const logger: Logger = Logger.getInstance();
+    expect(logger).toBeInstanceOf(Logger);
+  });
+
+  it('should export utils', () => {
+    import('../utils').then(utils => {
+      expect(utils).toBeDefined();
+      expect(typeof utils.formatLogEntry).toBe('function');
     });
   });
 });

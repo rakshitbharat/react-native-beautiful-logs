@@ -4,9 +4,12 @@
   "description": "A beautiful, feature-rich logging library for React Native applications with colored output and file persistence",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "jest",
+    "test:watch": "jest --watch",
     "demo": "npm test src/__tests__/demo.test.ts --no-jest-cache",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
@@ -14,7 +17,12 @@
     "prepare": "husky",
     "pre-commit": "lint-staged",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run lint && npm run typecheck && npm run test"
+    "validate": "npm run lint && npm run typecheck && npm run test",
+    "ci": "npm run validate && npm run build",
+    "build:validate": "npm run build && node scripts/validate-build.js",
+    "clean": "rm -rf lib coverage",
+    "prebuild": "npm run clean",
+    "dev": "npm run build:watch"
   },
   "dependencies": {
     "moment": "^2.30.1",
@@ -40,7 +48,7 @@
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "ts-jest": "^29.2.6",
-    "typescript": "^5.8.2"
+    "typescript": "^5.5.0"
   },
   "resolutions": {
     "react": "^18.3.1"

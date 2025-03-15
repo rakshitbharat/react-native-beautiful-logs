@@ -8,9 +8,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "jsx": "react-native",
-    "types": ["node", "react-native"],
-    "lib": ["es2018"]
+    "types": ["node", "react-native", "jest"],
+    "lib": ["es2018"],
+    "sourceMap": true,
+    "rootDir": "./src",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "**/__tests__/*", "lib", "coverage"]
 }

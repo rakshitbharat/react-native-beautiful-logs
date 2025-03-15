@@ -11,7 +11,7 @@ describe('formatJSON', () => {
       null: null,
     };
     const result = formatJSON(input);
-    
+
     expect(result).toContain('"string"');
     expect(result).toContain('"test"');
     expect(result).toContain('42');
@@ -27,7 +27,7 @@ describe('formatJSON', () => {
       },
     };
     const result = formatJSON(input);
-    
+
     expect(result).toContain('[');
     expect(result).toContain(']');
     expect(result).toContain('{');
@@ -40,7 +40,7 @@ describe('formatJSON', () => {
     const customColors = { ...COLORS, jsonString: '\x1b[35m' };
     const input = { test: 'value' };
     const result = formatJSON(input, customColors);
-    
+
     expect(result).toContain('\x1b[35m');
   });
 });
@@ -57,7 +57,7 @@ describe('formatMessage', () => {
 
   it('should format basic message correctly', () => {
     const result = formatMessage('info', ['Test message'], defaultConfig);
-    
+
     expect(result).toContain('INFO');
     expect(result).toContain('Test message');
     expect(result).toContain('App'); // Updated to match actual format
@@ -65,7 +65,7 @@ describe('formatMessage', () => {
 
   it('should handle module names', () => {
     const result = formatMessage('debug', ['[TestModule]', 'Test message'], defaultConfig);
-    
+
     expect(result).toContain('TestModule');
     expect(result).toContain('Test message');
   });
@@ -73,20 +73,22 @@ describe('formatMessage', () => {
   it('should format objects with proper indentation', () => {
     const obj = { test: 'value' };
     const result = formatMessage('info', ['Test:', obj], defaultConfig);
-    
+
     expect(result).toContain('Test:');
-    expect(result).toMatch(/"test"/); 
+    expect(result).toMatch(/"test"/);
     expect(result).toMatch(/"value"/);
-    
+
     // Check that the object is properly formatted
     const resultLines = result.split('\n');
-    const jsonLines = resultLines.filter(line => line.includes('"test"') || line.includes('"value"'));
+    const jsonLines = resultLines.filter(
+      line => line.includes('"test"') || line.includes('"value"'),
+    );
     expect(jsonLines.length).toBeGreaterThan(0);
   });
 
   it('should handle undefined and null values', () => {
     const result = formatMessage('warn', [undefined, null], defaultConfig);
-    
+
     expect(result).toContain('undefined');
     expect(result).toContain('null');
   });
@@ -97,14 +99,14 @@ describe('formatMessage', () => {
       customSymbols: { ...DEFAULT_SYMBOLS, info: '🔵' },
     };
     const result = formatMessage('info', ['Test'], config);
-    
+
     expect(result).toContain('🔵');
   });
 
   it('should handle stringified JSON objects', () => {
     const jsonString = JSON.stringify({ key: 'value' });
     const result = formatMessage('debug', [jsonString], defaultConfig);
-    
+
     // Parse the log message to verify JSON content
     const jsonMatch = result.match(/\{.*\}/);
     expect(jsonMatch).toBeTruthy();

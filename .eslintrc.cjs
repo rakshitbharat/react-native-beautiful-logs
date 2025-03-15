@@ -29,11 +29,12 @@ module.exports = {
   rules: {
     'prettier/prettier': 'error',
     'react-native/no-inline-styles': 'warn',
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'no-console': 'off', // Allow console statements since this is a logging library
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     'react/prop-types': 'off',
+    'no-control-regex': 'off', // Allow control characters in regex for ANSI color codes
   },
   ignorePatterns: ['lib/**/*', 'coverage/**/*'],
 };

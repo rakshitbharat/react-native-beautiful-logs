@@ -1,5 +1,4 @@
-import {emit} from '@src/utils/events';
-import {Platform} from 'react-native';
+import { Platform } from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import moment from 'moment';
 
@@ -134,10 +133,7 @@ const FALLBACK_DIRS = Platform.select({
     ReactNativeBlobUtil.fs.dirs.DocumentDir,
     ReactNativeBlobUtil.fs.dirs.MainBundleDir,
   ],
-  ios: [
-    ReactNativeBlobUtil.fs.dirs.DocumentDir,
-    ReactNativeBlobUtil.fs.dirs.CacheDir,
-  ],
+  ios: [ReactNativeBlobUtil.fs.dirs.DocumentDir, ReactNativeBlobUtil.fs.dirs.CacheDir],
 });
 
 const tryCreateDirectory = async baseDir => {
@@ -230,20 +226,12 @@ const initSessionLog = async () => {
             // Only write session start marker for new files
             const timestamp = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
             const sessionStartMessage = `=== Session Started at ${timestamp} ===\n`;
-            await ReactNativeBlobUtil.fs.appendFile(
-              filePath,
-              sessionStartMessage,
-              'utf8',
-            );
+            await ReactNativeBlobUtil.fs.appendFile(filePath, sessionStartMessage, 'utf8');
           } else {
             // For existing files, just add a session separator
             const timestamp = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
             const sessionSeparator = `\n=== New Session Started at ${timestamp} ===\n`;
-            await ReactNativeBlobUtil.fs.appendFile(
-              filePath,
-              sessionSeparator,
-              'utf8',
-            );
+            await ReactNativeBlobUtil.fs.appendFile(filePath, sessionSeparator, 'utf8');
           }
 
           await cleanupOldLogs();
@@ -251,10 +239,7 @@ const initSessionLog = async () => {
           return true;
         }
       } catch (error) {
-        console.warn(
-          `Failed to initialize in ${baseDir}:`,
-          JSON.stringify(error, null, 2),
-        );
+        console.warn(`Failed to initialize in ${baseDir}:`, JSON.stringify(error, null, 2));
         continue;
       }
     }
@@ -284,9 +269,7 @@ const cleanupOldLogs = async () => {
     // Keep only the most recent MAX_LOG_FILES files
     if (sortedFiles.length > MAX_LOG_FILES) {
       const filesToDelete = sortedFiles.slice(MAX_LOG_FILES);
-      await Promise.all(
-        filesToDelete.map(file => loggerInterface.deleteLogFile(file)),
-      );
+      await Promise.all(filesToDelete.map(file => loggerInterface.deleteLogFile(file)));
     }
 
     // Check file sizes and age
@@ -348,26 +331,14 @@ const writeToFile = async (message, type) => {
     try {
       if (Platform.OS === 'android') {
         try {
-          await ReactNativeBlobUtil.fs.appendFile(
-            currentSessionLogPath,
-            logEntry,
-            'utf8',
-          );
+          await ReactNativeBlobUtil.fs.appendFile(currentSessionLogPath, logEntry, 'utf8');
         } catch (writeError) {
           // Fallback to base64 if UTF-8 fails
           const base64Data = Buffer.from(logEntry).toString('base64');
-          await ReactNativeBlobUtil.fs.appendFile(
-            currentSessionLogPath,
-            base64Data,
-            'base64',
-          );
+          await ReactNativeBlobUtil.fs.appendFile(currentSessionLogPath, base64Data, 'base64');
         }
       } else {
-        await ReactNativeBlobUtil.fs.appendFile(
-          currentSessionLogPath,
-          logEntry,
-          'utf8',
-        );
+        await ReactNativeBlobUtil.fs.appendFile(currentSessionLogPath, logEntry, 'utf8');
       }
 
       // Check if current log file has exceeded size limit
@@ -389,28 +360,25 @@ const writeToFile = async (message, type) => {
 // Restore the original formatJSON function
 const formatJSON = obj => {
   const jsonString = JSON.stringify(obj, null, 2);
-  return jsonString.replace(
-    /(".*?":|".*?"|\d+\.?\d*|true|false|null)/g,
-    match => {
-      if (match.endsWith(':')) {
-        // Key
-        return `${COLORS.jsonKey}${match}${COLORS.reset}`;
-      } else if (match.startsWith('"')) {
-        // String
-        return `${COLORS.jsonString}${match}${COLORS.reset}`;
-      } else if (/^-?\d+\.?\d*$/.test(match)) {
-        // Number
-        return `${COLORS.jsonNumber}${match}${COLORS.reset}`;
-      } else if (match === 'true' || match === 'false') {
-        // Boolean
-        return `${COLORS.jsonBoolean}${match}${COLORS.reset}`;
-      } else if (match === 'null') {
-        // Null
-        return `${COLORS.jsonNull}${match}${COLORS.reset}`;
-      }
-      return match;
-    },
-  );
+  return jsonString.replace(/(".*?":|".*?"|\d+\.?\d*|true|false|null)/g, match => {
+    if (match.endsWith(':')) {
+      // Key
+      return `${COLORS.jsonKey}${match}${COLORS.reset}`;
+    } else if (match.startsWith('"')) {
+      // String
+      return `${COLORS.jsonString}${match}${COLORS.reset}`;
+    } else if (/^-?\d+\.?\d*$/.test(match)) {
+      // Number
+      return `${COLORS.jsonNumber}${match}${COLORS.reset}`;
+    } else if (match === 'true' || match === 'false') {
+      // Boolean
+      return `${COLORS.jsonBoolean}${match}${COLORS.reset}`;
+    } else if (match === 'null') {
+      // Null
+      return `${COLORS.jsonNull}${match}${COLORS.reset}`;
+    }
+    return match;
+  });
 };
 
 // Keep the original formatMessage function
@@ -472,9 +440,7 @@ export const log = (...args) => {
   const shouldFilter = args.some(
     arg =>
       typeof arg === 'string' &&
-      LOG_FILTERS.some(filter =>
-        arg.toLowerCase().includes(filter.toLowerCase()),
-      ),
+      LOG_FILTERS.some(filter => arg.toLowerCase().includes(filter.toLowerCase())),
   );
 
   if (shouldFilter) return;
@@ -486,12 +452,8 @@ export const log = (...args) => {
 
   const validTypes = ['debug', 'error', 'warn', 'info'];
   const [firstArg, ...rest] = args;
-  const type = validTypes.includes(firstArg?.toLowerCase())
-    ? firstArg.toLowerCase()
-    : 'info';
-  const messageParts = validTypes.includes(firstArg?.toLowerCase())
-    ? rest
-    : args;
+  const type = validTypes.includes(firstArg?.toLowerCase()) ? firstArg.toLowerCase() : 'info';
+  const messageParts = validTypes.includes(firstArg?.toLowerCase()) ? rest : args;
 
   try {
     const formattedMessage = formatMessage(type, messageParts);
@@ -511,34 +473,15 @@ export const log = (...args) => {
         console.log(formattedMessage);
     }
 
-    // Log to file without ANSI colors
-    const cleanMessage = formattedMessage.replace(/\x1b\[\d+m/g, '');
+    // Log to file without color codes
+    const cleanMessage = formattedMessage.replace(/\u001b\[\d+m/g, '');
     writeToFile(cleanMessage, type);
-
-    // Send to view layer
-    // sendToViewLayer(type, messageParts);
   } catch (error) {
     console.error('📴 Logging Error:', error);
   }
 };
 
-const sendToViewLayer = (type, messageParts) => {
-  const viewLayerMessage = formatMessage(type, messageParts).replace(
-    /\x1b\[\d+m/g,
-    '',
-  );
-
-  try {
-    emit(
-      'FAST_CONNECT_LOG_MESSAGE',
-      `[${type.toUpperCase()}] ${viewLayerMessage}`,
-    );
-  } catch (error) {
-    console.error('🔴 Failed to emit log message:', error);
-  }
-};
-
-// Enhanced loggerInterface with platform-specific handling
+// Platform-specific loggerInterface with enhanced handling
 export const loggerInterface = {
   async getLogFiles() {
     try {
@@ -567,10 +510,7 @@ export const loggerInterface = {
             await this.deleteLogFile(file);
           }
         } catch (statError) {
-          console.error(
-            `Error checking file ${file}:`,
-            JSON.stringify(statError, null, 2),
-          );
+          console.error(`Error checking file ${file}:`, JSON.stringify(statError, null, 2));
         }
       }
 
@@ -584,10 +524,7 @@ export const loggerInterface = {
   async getCurrentSessionLog() {
     if (!currentSessionLogPath) return '';
     try {
-      return await ReactNativeBlobUtil.fs.readFile(
-        currentSessionLogPath,
-        'utf8',
-      );
+      return await ReactNativeBlobUtil.fs.readFile(currentSessionLogPath, 'utf8');
     } catch (error) {
       console.error('Error reading current session log:', error);
       return '';
@@ -616,32 +553,21 @@ export const loggerInterface = {
       // Read file with appropriate encoding per platform
       if (Platform.OS === 'android') {
         try {
-          const content = await ReactNativeBlobUtil.fs.readFile(
-            filePath,
-            'utf8',
-          );
+          const content = await ReactNativeBlobUtil.fs.readFile(filePath, 'utf8');
           if (!content || content.trim() === '') {
             throw new Error('Empty content from utf8 read');
           }
           return content;
         } catch (readError) {
-          console.warn(
-            'UTF-8 read failed, trying base64:',
-            JSON.stringify(readError, null, 2),
-          );
+          console.warn('UTF-8 read failed, trying base64:', JSON.stringify(readError, null, 2));
 
           // Fallback to base64 reading
-          const base64Content = await ReactNativeBlobUtil.fs.readFile(
-            filePath,
-            'base64',
-          );
+          const base64Content = await ReactNativeBlobUtil.fs.readFile(filePath, 'base64');
           if (!base64Content) {
             throw new Error('Empty content from base64 read');
           }
 
-          const decodedContent = Buffer.from(base64Content, 'base64').toString(
-            'utf8',
-          );
+          const decodedContent = Buffer.from(base64Content, 'base64').toString('utf8');
           if (!decodedContent || decodedContent.trim() === '') {
             throw new Error('Empty content after base64 decode');
           }
@@ -656,11 +582,7 @@ export const loggerInterface = {
         return content;
       }
     } catch (error) {
-      console.error(
-        'Error reading log file:',
-        filename,
-        JSON.stringify(error, null, 2),
-      );
+      console.error('Error reading log file:', filename, JSON.stringify(error, null, 2));
       return null;
     }
   },

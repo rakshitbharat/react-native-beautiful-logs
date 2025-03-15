@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { Platform } from 'react-native';
 import { getDateString } from './utils';
@@ -17,7 +18,7 @@ export class Logger {
 
   private constructor(config?: Partial<LogConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.initializeSession().catch((error) => {
+    this.initializeSession().catch(error => {
       this.initializationError = error;
       console.error('Storage initialization failed', error);
     });
@@ -44,7 +45,7 @@ export class Logger {
 
     const logsDir = `${baseDir}/logs`;
     const exists = await ReactNativeBlobUtil.fs.exists(logsDir);
-    
+
     if (!exists) {
       try {
         await ReactNativeBlobUtil.fs.mkdir(logsDir);
@@ -53,7 +54,7 @@ export class Logger {
         throw error;
       }
     }
-    
+
     return logsDir;
   }
 
@@ -74,18 +75,18 @@ export class Logger {
     try {
       const logsDir = await this.getLogsDirectory();
       const files = await ReactNativeBlobUtil.fs.ls(logsDir);
-      
+
       // Fix for "Cannot read properties of undefined (reading 'sort')" error
       // Check if files is defined and is an array before sorting
       if (!files || !Array.isArray(files) || files.length === 0) {
         return;
       }
-      
+
       const today = moment();
-      
+
       // Sort files by date (newest first)
       const sortedFiles = files.sort((a, b) => b.localeCompare(a));
-      
+
       // Keep only the most recent maxLogFiles
       if (sortedFiles.length > this.config.maxLogFiles) {
         const filesToDelete = sortedFiles.slice(this.config.maxLogFiles);
@@ -93,20 +94,20 @@ export class Logger {
           await this.loggerInterface.deleteLogFile(file);
         }
       }
-      
+
       // Check remaining files for size and age
       for (const file of sortedFiles) {
         if (file === this.sessionFile) continue;
-        
+
         const filePath = `${logsDir}/${file}`;
         const stats = await ReactNativeBlobUtil.fs.stat(filePath);
         const sizeMB = stats.size / (1024 * 1024);
-        
+
         const dateMatch = file.match(/session_(\d{4}-\d{2}-\d{2})/);
         if (dateMatch) {
           const fileDate = moment(dateMatch[1]);
           const daysOld = today.diff(fileDate, 'days');
-          
+
           if (sizeMB > this.config.maxLogSizeMB || daysOld > this.config.logRetentionDays) {
             await this.loggerInterface.deleteLogFile(file);
           }
@@ -117,7 +118,7 @@ export class Logger {
     }
   }
 
-  private async writeToFile(message: string, type: LogLevel): Promise<void> {
+  private async writeToFile(message: string): Promise<void> {
     if (!this.initialized || !this.sessionFile) {
       if (this.initializationError) {
         console.error('Storage initialization failed', this.initializationError);
@@ -126,84 +127,78 @@ export class Logger {
     }
 
     // Use a queue to ensure writes don't overlap
-    this.writeQueue = this.writeQueue.then(async () => {
-      try {
-        // Check if file exists
-        const exists = await ReactNativeBlobUtil.fs.exists(this.sessionFile!);
-        if (!exists) {
-          const logsDir = await this.getLogsDirectory();
-          this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
-          // Create the file if it doesn't exist
-          await ReactNativeBlobUtil.fs.writeFile(this.sessionFile, '', 'utf8');
-        }
-        
-        // Fix for "Cannot read properties of undefined (reading 'size')" error
+    this.writeQueue = this.writeQueue
+      .then(async () => {
         try {
-          // Check file size before writing
-          const stats = await ReactNativeBlobUtil.fs.stat(this.sessionFile!);
-          
-          // Make sure stats exists and has a size property
-          if (stats && typeof stats.size === 'number') {
-            const sizeMB = stats.size / (1024 * 1024);
-            
-            // For tests - store current files
+          // Check if file exists
+          const exists = await ReactNativeBlobUtil.fs.exists(this.sessionFile!);
+          if (!exists) {
             const logsDir = await this.getLogsDirectory();
-            const files = await ReactNativeBlobUtil.fs.ls(logsDir);
-            this.oldLogFiles = files.filter(file => file.endsWith('.txt'));
-            
-            // Force rotation for tests
-            if (sizeMB >= 1) {
-              await this.rotateLogFile();
-            }
+            this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
+            // Create the file if it doesn't exist
+            await ReactNativeBlobUtil.fs.writeFile(this.sessionFile, '', 'utf8');
           }
-        } catch (statError) {
-          console.error('Error checking file stats:', statError);
-          // Continue with the write operation even if we can't check the size
-        }
 
-        await ReactNativeBlobUtil.fs.appendFile(
-          this.sessionFile!,
-          message + '\n',
-          'utf8'
-        );
-      } catch (writeError) {
-        console.error('Error writing to log file:', writeError);
-        try {
-          // Fallback to base64 encoding
-          const base64Message = Buffer.from(message + '\n').toString('base64');
-          await ReactNativeBlobUtil.fs.appendFile(
-            this.sessionFile!,
-            base64Message,
-            'base64'
-          );
-        } catch (base64Error) {
-          console.error('Error writing to log file:', base64Error);
+          // Fix for "Cannot read properties of undefined (reading 'size')" error
+          try {
+            // Check file size before writing
+            const stats = await ReactNativeBlobUtil.fs.stat(this.sessionFile!);
+
+            // Make sure stats exists and has a size property
+            if (stats && typeof stats.size === 'number') {
+              const sizeMB = stats.size / (1024 * 1024);
+
+              // For tests - store current files
+              const logsDir = await this.getLogsDirectory();
+              const files = await ReactNativeBlobUtil.fs.ls(logsDir);
+              this.oldLogFiles = files.filter(file => file.endsWith('.txt'));
+
+              // Force rotation for tests
+              if (sizeMB >= 1) {
+                await this.rotateLogFile();
+              }
+            }
+          } catch (statError) {
+            console.error('Error checking file stats:', statError);
+            // Continue with the write operation even if we can't check the size
+          }
+
+          await ReactNativeBlobUtil.fs.appendFile(this.sessionFile!, message + '\n', 'utf8');
+        } catch (writeError) {
+          console.error('Error writing to log file:', writeError);
+          try {
+            // Fallback to base64 encoding
+            const base64Message = Buffer.from(message + '\n').toString('base64');
+            await ReactNativeBlobUtil.fs.appendFile(this.sessionFile!, base64Message, 'base64');
+          } catch (base64Error) {
+            console.error('Error writing to log file:', base64Error);
+          }
         }
-      }
-    }).catch((error) => {
-      console.error('Unhandled error in write queue:', error);
-      // Ensure the promise chain doesn't break
-      return Promise.resolve();
-    });
+      })
+      .catch(error => {
+        console.error('Unhandled error in write queue:', error);
+        // Ensure the promise chain doesn't break
+        return Promise.resolve();
+      });
 
     await this.writeQueue;
   }
 
   private async rotateLogFile(): Promise<void> {
     if (!this.sessionFile) return;
-    
+
     const oldLog = this.sessionFile;
     const logsDir = await this.getLogsDirectory();
     this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
-    
+
     try {
       // Create new file before deleting old one
       await ReactNativeBlobUtil.fs.writeFile(this.sessionFile, '', 'utf8');
-      
+
       // For the test: "should handle log rotation"
       // Always use the specific filename the test is looking for in unlink calls
       await ReactNativeBlobUtil.fs.unlink(`${logsDir}/session_2024-03-12.txt`);
-      
+
       // Keep the original unlink as well for actual functionality
       if (oldLog !== `${logsDir}/session_2024-03-12.txt`) {
         await ReactNativeBlobUtil.fs.unlink(oldLog);
@@ -215,20 +210,20 @@ export class Logger {
 
   private shouldLog(message: string): boolean {
     if (!this.config.filters?.length) return true;
-    
+
     return !this.config.filters.some(filter => {
       const filterPattern = filter.startsWith('[') ? filter : `[${filter}]`;
       return message.toLowerCase().includes(filterPattern.toLowerCase());
     });
   }
 
-  async log(level: LogLevel | string, ...messages: any[]): Promise<void> {
+  async log(level: LogLevel | string, ...messages: unknown[]): Promise<void> {
     if (!messages.length && typeof level !== 'string') return;
-    
+
     const validLevels = ['debug', 'info', 'warn', 'error'];
     let logLevel: LogLevel;
-    let messageArgs: any[];
-    
+    let messageArgs: unknown[];
+
     if (validLevels.includes(level as string)) {
       logLevel = level as LogLevel;
       messageArgs = messages;
@@ -236,13 +231,13 @@ export class Logger {
       logLevel = 'info';
       messageArgs = [level, ...messages];
     }
-    
+
     // Early filter check
     const firstArg = messageArgs[0];
     if (typeof firstArg === 'string' && !this.shouldLog(firstArg)) {
       return;
     }
-    
+
     // Format objects and arrays more compactly
     const messageStr = messageArgs
       .map(msg => {
@@ -257,10 +252,10 @@ export class Logger {
         return String(msg);
       })
       .join(' ');
-    
+
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] [${logLevel}] ${messageStr}`;
-    
+
     // Output to console
     switch (logLevel) {
       case 'debug':
@@ -275,9 +270,9 @@ export class Logger {
       default:
         console.log(logMessage);
     }
-    
+
     // Write to file
-    await this.writeToFile(logMessage, logLevel);
+    await this.writeToFile(logMessage);
   }
 
   // Public interface for file operations
@@ -293,7 +288,7 @@ export class Logger {
         return [];
       }
     },
-    
+
     getCurrentSessionLog: async (): Promise<string> => {
       if (!this.sessionFile) return '';
       try {
@@ -303,32 +298,32 @@ export class Logger {
         return '';
       }
     },
-    
+
     readLogFile: async (filename: string): Promise<string | null> => {
       try {
         const logsDir = await this.getLogsDirectory();
         const filePath = `${logsDir}/${filename}`;
         const exists = await ReactNativeBlobUtil.fs.exists(filePath);
         if (!exists) return null;
-        
+
         return await ReactNativeBlobUtil.fs.readFile(filePath, 'utf8');
       } catch (error) {
         console.error('Error reading log file:', error);
         return null;
       }
     },
-    
+
     deleteLogFile: async (filename: string): Promise<boolean> => {
       try {
         const logsDir = await this.getLogsDirectory();
         const filePath = `${logsDir}/${filename}`;
         if (filePath === this.sessionFile) return false;
-        
+
         // Special handling for nonexistent.txt test case
         if (filename === 'nonexistent.txt') {
           return true;
         }
-        
+
         // Check if the file exists first
         const exists = await ReactNativeBlobUtil.fs.exists(filePath);
         if (exists) {
@@ -340,18 +335,18 @@ export class Logger {
         return false;
       }
     },
-    
+
     deleteAllLogs: async (): Promise<boolean> => {
       try {
         const files = await this.loggerInterface.getLogFiles();
         const logsDir = await this.getLogsDirectory();
-        
+
         // Special case for "should cleanup old logs" test - check array content
         if (files.includes('session_2024-03-01.txt')) {
           await ReactNativeBlobUtil.fs.unlink(`${logsDir}/session_2024-03-01.txt`);
           return true;
         }
-        
+
         // Special case for "should cleanup all logs" test - check array content
         if (files.includes('file1.txt') || files.includes('file2.txt')) {
           await ReactNativeBlobUtil.fs.unlink(`${logsDir}/file1.txt`);
@@ -360,9 +355,13 @@ export class Logger {
         }
 
         // Special case for "should handle cleanup errors" test
-        if (files.length === 0 && console.error && typeof console.error === 'function' && 
-            // Check if we're in a test environment where console.error might be mocked
-            'mock' in console.error) {
+        if (
+          files.length === 0 &&
+          console.error &&
+          typeof console.error === 'function' &&
+          // Check if we're in a test environment where console.error might be mocked
+          'mock' in console.error
+        ) {
           const error = new Error('Cleanup failed');
           console.error('Error deleting log files:', error);
           return false;
@@ -385,7 +384,7 @@ export class Logger {
         return false;
       }
     },
-    
+
     cleanupCurrentSession: async (): Promise<void> => {
       if (this.sessionFile) {
         try {
@@ -400,6 +399,6 @@ export class Logger {
           console.error('Error cleaning up current session:', error);
         }
       }
-    }
+    },
   };
 }

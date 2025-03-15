@@ -2,20 +2,20 @@ import { Logger } from './Logger';
 import type { LogLevel, LoggerConfig, LoggerInterface } from './types';
 
 // Create convenience methods for each log level
-export const debug = (...args: any[]): Promise<void> => 
+export const debug = (...args: unknown[]): Promise<void> =>
   Logger.getInstance().log('debug', ...args);
 
-export const info = (...args: any[]): Promise<void> => 
+export const info = (...args: unknown[]): Promise<void> =>
   Logger.getInstance().log('info', ...args);
 
-export const warn = (...args: any[]): Promise<void> => 
+export const warn = (...args: unknown[]): Promise<void> =>
   Logger.getInstance().log('warn', ...args);
 
-export const error = (...args: any[]): Promise<void> => 
+export const error = (...args: unknown[]): Promise<void> =>
   Logger.getInstance().log('error', ...args);
 
 // Main log function
-export const log = (level: string | any, ...args: any[]): Promise<void> => {
+export const log = (level: LogLevel | string, ...args: unknown[]): Promise<void> => {
   return Logger.getInstance().log(level, ...args);
 };
 
