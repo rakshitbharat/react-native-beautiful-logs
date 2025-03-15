@@ -1,0 +1,10 @@
+src/
+__tests__/
+node_modules/
+coverage/
+jest.config.cjs
+tsconfig.json
+.eslintrc.js
+.prettierrc
+.prettierignore
+.husky/
