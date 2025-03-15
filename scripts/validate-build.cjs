@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const assert = require('node:assert/strict');
+const { createRequire } = require('module');
+const require = createRequire(import.meta.url);
 
 (async () => {
   try {
-    const { Logger, utils } = await import('../lib/index.js');
+    const { Logger, utils } = require('../lib/index.js');
     
     // Validate basic exports
     assert(typeof Logger === 'function', 'Logger class not exported correctly');
