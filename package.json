@@ -5,6 +5,32 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "type": "module",
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react-native",
+    "logging",
+    "logs",
+    "debug",
+    "console",
+    "file-logging",
+    "color-logs",
+    "beautiful-logs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rakshitbharat/react-native-beautiful-log.git"
+  },
+  "author": "Rakshit Bharat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rakshitbharat/react-native-beautiful-log/issues"
+  },
+  "homepage": "https://github.com/rakshitbharat/react-native-beautiful-log#readme",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
