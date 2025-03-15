@@ -23,14 +23,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rakshitbharat/react-native-beautiful-log.git"
+    "url": "git+https://github.com/rakshitbharat/react-native-beautiful-logs.git"
   },
   "author": "Rakshit Bharat",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rakshitbharat/react-native-beautiful-log/issues"
+    "url": "https://github.com/rakshitbharat/react-native-beautiful-logs/issues"
   },
-  "homepage": "https://github.com/rakshitbharat/react-native-beautiful-log#readme",
+  "homepage": "https://github.com/rakshitbharat/react-native-beautiful-logs#readme",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
