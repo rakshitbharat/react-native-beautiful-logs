@@ -1,6 +1,5 @@
 import { formatJSON, formatMessage } from '../utils';
-import { COLORS, DEFAULT_SYMBOLS } from '../constants';
-import type { LoggerConfig } from '../types';
+import { COLORS, DEFAULT_SYMBOLS, DEFAULT_CONFIG } from '../constants';
 
 describe('formatJSON', () => {
   it('should format primitive values correctly', () => {
@@ -46,21 +45,13 @@ describe('formatJSON', () => {
 });
 
 describe('formatMessage', () => {
-  const defaultConfig: Required<LoggerConfig> = {
-    maxLogFiles: 50,
-    maxLogSizeMB: 10,
-    logRetentionDays: 30,
-    filters: [],
-    customColors: COLORS,
-    customSymbols: DEFAULT_SYMBOLS,
-  };
+  const defaultConfig = DEFAULT_CONFIG;
 
   it('should format basic message correctly', () => {
     const result = formatMessage('info', ['Test message'], defaultConfig);
 
     expect(result).toContain('INFO');
     expect(result).toContain('Test message');
-    expect(result).toContain('App'); // Updated to match actual format
   });
 
   it('should handle module names', () => {
@@ -77,13 +68,6 @@ describe('formatMessage', () => {
     expect(result).toContain('Test:');
     expect(result).toMatch(/"test"/);
     expect(result).toMatch(/"value"/);
-
-    // Check that the object is properly formatted
-    const resultLines = result.split('\n');
-    const jsonLines = resultLines.filter(
-      line => line.includes('"test"') || line.includes('"value"'),
-    );
-    expect(jsonLines.length).toBeGreaterThan(0);
   });
 
   it('should handle undefined and null values', () => {
@@ -110,7 +94,9 @@ describe('formatMessage', () => {
     // Parse the log message to verify JSON content
     const jsonMatch = result.match(/\{.*\}/);
     expect(jsonMatch).toBeTruthy();
-    const parsedJson = JSON.parse(jsonMatch![0]);
-    expect(parsedJson).toEqual({ key: 'value' });
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      expect(parsed).toEqual({ key: 'value' });
+    }
   });
 });

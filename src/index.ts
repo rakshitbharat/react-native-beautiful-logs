@@ -1,5 +1,6 @@
 import { Logger } from './Logger';
 import type { LogLevel, LoggerConfig, LoggerInterface } from './types';
+import * as utils from './utils';
 
 // Create convenience methods for each log level
 export const debug = (...args: unknown[]): Promise<void> =>
@@ -29,7 +30,5 @@ export const getLoggerInterface = (): LoggerInterface => {
   return Logger.getInstance().loggerInterface;
 };
 
+export { Logger, utils };
 export type { LogLevel, LoggerConfig, LoggerInterface };
-
-// Create default instance
-export default Logger.getInstance();

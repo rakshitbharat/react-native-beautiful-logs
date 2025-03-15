@@ -15,7 +15,7 @@ export declare class Logger {
     private writeToFile;
     private rotateLogFile;
     private shouldLog;
-    log(level: LogLevel | string, ...messages: any[]): Promise<void>;
+    log(level: LogLevel | string, ...messages: unknown[]): Promise<void>;
     loggerInterface: {
         getLogFiles: () => Promise<string[]>;
         getCurrentSessionLog: () => Promise<string>;

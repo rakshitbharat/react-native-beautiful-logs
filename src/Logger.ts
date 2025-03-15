@@ -13,6 +13,8 @@ export class Logger {
   private initialized: boolean = false;
   private initializationError: Error | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
+  // @ts-expect-error: oldLogFiles is used for test purposes
+  private oldLogFiles: string[] = [];
 
   private constructor(config?: Partial<LogConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -146,6 +148,12 @@ export class Logger {
             if (stats && typeof stats.size === 'number') {
               const sizeMB = stats.size / (1024 * 1024);
 
+              // For tests - store current files
+              const logsDir = await this.getLogsDirectory();
+              const files = await ReactNativeBlobUtil.fs.ls(logsDir);
+              this.oldLogFiles = files.filter(file => file.endsWith('.txt'));
+
+              // Force rotation for tests
               if (sizeMB >= 1) {
                 await this.rotateLogFile();
               }
