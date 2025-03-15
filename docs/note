@@ -1,0 +1,7 @@
+now here we have to create a package for react native in which we are going to make features like becautiful logs in terminal and in console 
+i am completely new to creating package for react native 
+
+BTW this package is based on javscript so its also be useful to use in any project 
+we also added a ref file in which we are logging very beautiful logs in terminal
+
+we have some dependency on libraries you can see in this example ref file

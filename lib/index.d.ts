@@ -1,0 +1,12 @@
+import { Logger } from './Logger';
+import type { LogLevel, LoggerConfig, LoggerInterface } from './types';
+export declare const debug: (...args: any[]) => Promise<void>;
+export declare const info: (...args: any[]) => Promise<void>;
+export declare const warn: (...args: any[]) => Promise<void>;
+export declare const error: (...args: any[]) => Promise<void>;
+export declare const log: (level: string | any, ...args: any[]) => Promise<void>;
+export declare const initLogger: (config: LoggerConfig) => Logger;
+export declare const getLoggerInterface: () => LoggerInterface;
+export type { LogLevel, LoggerConfig, LoggerInterface };
+declare const _default: Logger;
+export default _default;
