@@ -1,6 +1,6 @@
-import { Logger as LoggerClass } from './Logger';
-import type { LogLevel, LoggerConfig, LoggerInterface } from './types';
-import * as utils from './utils';
+import { Logger as LoggerClass } from './Logger.js';
+import type { LogLevel, LoggerConfig, LoggerInterface } from './types.js';
+import * as utils from './utils.js';
 
 // Create convenience methods for each log level
 export const debug = (...args: unknown[]): Promise<void> =>

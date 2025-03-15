@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
+import pkg from 'react-native';
+const { Platform } = pkg;
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import { Platform } from 'react-native';
-import { getDateString } from './utils';
-import { DEFAULT_CONFIG } from './constants';
-import { LoggerConfig as LogConfig, LogLevel } from './types';
+import { getDateString } from './utils.js';
+import { DEFAULT_CONFIG } from './constants.js';
+import { LoggerConfig as LogConfig, LogLevel } from './types.js';
 import moment from 'moment';
 
 export class Logger {

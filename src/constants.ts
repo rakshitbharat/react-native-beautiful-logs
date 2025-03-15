@@ -1,4 +1,5 @@
-import { Platform } from 'react-native';
+import pkg from 'react-native';
+const { Platform } = pkg;
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 export const COLORS = {

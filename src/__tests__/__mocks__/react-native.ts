@@ -1,13 +1,6 @@
-type PlatformSelectConfig<T> = {
-  ios?: T;
-  android?: T;
-  native?: T;
-  default?: T;
-};
-
 export const Platform = {
   OS: 'ios',
-  select: jest.fn(<T>(obj: PlatformSelectConfig<T>) => obj.ios),
+  select: jest.fn(obj => obj.ios),
 };
 
 export default {

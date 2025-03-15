@@ -1,5 +1,5 @@
-import { debug, info, warn, error, log, initLogger, getLoggerInterface } from '../index';
-import { Logger } from '../Logger';
+import { debug, info, warn, error, log, initLogger, getLoggerInterface } from '../index.js';
+import { Logger } from '../Logger.js';
 
 // Mock react-native
 jest.mock('react-native', () => ({

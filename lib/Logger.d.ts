@@ -1,4 +1,4 @@
-import { LoggerConfig as LogConfig, LogLevel } from './types';
+import { LoggerConfig as LogConfig, LogLevel } from './types.js';
 export declare class Logger {
     private static instance;
     private config;

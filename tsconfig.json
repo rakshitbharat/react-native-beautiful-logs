@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
+    "target": "es2017",
+    "module": "esnext",
     "declaration": true,
     "outDir": "./lib",
     "strict": true,
@@ -9,13 +9,16 @@
     "skipLibCheck": true,
     "jsx": "react-native",
     "types": ["node", "react-native", "jest"],
-    "lib": ["es2018"],
+    "lib": ["es2017"],
     "sourceMap": true,
     "rootDir": "./src",
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "removeComments": false,
+    "moduleResolution": "node",
+    "baseUrl": "./"
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*", "lib", "coverage"]

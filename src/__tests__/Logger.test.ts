@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
-import { Logger } from '../Logger';
+import { Logger } from '../Logger.js';
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import { Platform } from 'react-native';
+import pkg from 'react-native';
+const { Platform } = pkg;
 
 const TIMEOUT = 10000; // 10 seconds
 

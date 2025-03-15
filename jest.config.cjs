@@ -1,5 +1,6 @@
+/** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
@@ -10,12 +11,14 @@ module.exports = {
         tsconfig: {
           jsx: 'react',
         },
+        useESM: true,
       },
     ],
   },
   moduleNameMapper: {
     '^react-native$': '<rootDir>/src/__tests__/__mocks__/react-native.ts',
     '^react-native-blob-util$': '<rootDir>/src/__tests__/__mocks__/react-native-blob-util.ts',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   collectCoverage: true,
   coverageDirectory: 'coverage',
@@ -32,4 +35,5 @@ module.exports = {
     'node_modules/(?!(react-native|@react-native|react-native-blob-util)/)',
   ],
   moduleDirectories: ['node_modules', '<rootDir>/src'],
+  extensionsToTreatAsEsm: ['.ts'],
 };

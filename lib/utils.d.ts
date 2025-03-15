@@ -1,5 +1,5 @@
-import { LoggerConfig, LogLevel } from './types';
-import { COLORS } from './constants';
+import { LoggerConfig, LogLevel } from './types.js';
+import { COLORS } from './constants.js';
 type ColorMap = {
     [K in keyof typeof COLORS]: string;
 };

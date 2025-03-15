@@ -1,5 +1,5 @@
-import { formatJSON, formatMessage } from '../utils';
-import { COLORS, DEFAULT_SYMBOLS, DEFAULT_CONFIG } from '../constants';
+import { formatJSON, formatMessage } from '../utils.js';
+import { COLORS, DEFAULT_SYMBOLS, DEFAULT_CONFIG } from '../constants.js';
 
 describe('formatJSON', () => {
   it('should format primitive values correctly', () => {
