@@ -5,3 +5,21 @@ BTW this package is based on javscript so its also be useful to use in any proje
 we also added a ref file in which we are logging very beautiful logs in terminal
 
 we have some dependency on libraries you can see in this example ref file
+------
+
+#codebase 
+this project was made for just a small thing and that is to use the ref folder logs.js concept javascript file to src typescript project with strict type and lint supported but i think we are missing many things i have seen that when we use this package to logs things the json is not coming in coloring things also i notice that user have to everytime pass the config like we can see in read me but that is wrong 
+the config we can maintain internal project and user can just pass the config like to filterout the project long modules like
+
+// Keep the LOG_FILTERS array from the original file
+export const LOG_FILTERS = [
+  // `[Axios]`,
+  // `[Box3IconGrid]`,
+  // `[CarProfileService]`,
+  // `[VehicleService]`,
+
+  this
+
+  but even the read me is not able to show this and every much important thing about config and the log main class is it should be singleton because user at init time can load the config and can anywhere in project can modify on fly but it should not be like everytime the log function used and it need to load a config 
+
+and so on please check entire project and fix all this also the react native log file maintaining funcitons are not working properly please check all this things
