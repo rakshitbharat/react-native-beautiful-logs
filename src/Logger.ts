@@ -1,405 +1,186 @@
-/* eslint-disable no-console */
-import pkg from 'react-native';
-const { Platform } = pkg;
-import ReactNativeBlobUtil from 'react-native-blob-util';
-import { getDateString } from './utils.js';
-import { DEFAULT_CONFIG } from './constants.js';
-import { LoggerConfig as LogConfig, LogLevel } from './types.js';
-import moment from 'moment';
+/**
+ * @fileoverview Contains the core `log` function responsible for processing
+ * log messages, formatting them for console and file output, and handling filtering.
+ * @category Core
+ */
 
-export class Logger {
-  private static instance: Logger;
-  private config: Required<LogConfig>;
-  private sessionFile: string | null = null;
-  private initialized: boolean = false;
-  private initializationError: Error | null = null;
-  private writeQueue: Promise<void> = Promise.resolve();
-  // @ts-expect-error: oldLogFiles is used for test purposes
-  private oldLogFiles: string[] = [];
+import { LOG_FILTERS, SYMBOLS } from './constants';
+import { LogLevel } from './types';
+import { formatConsoleMessage, stripAnsiCodes } from './utils';
+import { writeToFile, initSessionLog } from './fileManager';
 
-  private constructor(config?: Partial<LogConfig>) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
-    this.initializeSession().catch(error => {
-      this.initializationError = error;
-      console.error('Storage initialization failed', error);
-    });
-  }
+/**
+ * @internal
+ * Flag to ensure automatic initialization (triggered by the first log call)
+ * is attempted only once per application lifecycle by the logger itself.
+ * Subsequent calls to `initSessionLog` or `writeToFile` can still trigger
+ * initialization checks within the `fileManager`.
+ */
+let initAttemptedByLogger = false;
 
-  static getInstance(config?: Partial<LogConfig>): Logger {
-    if (!Logger.instance) {
-      Logger.instance = new Logger(config);
-    }
-    return Logger.instance;
-  }
-
-  private async getLogsDirectory(): Promise<string> {
-    const baseDir = Platform.select({
-      ios: ReactNativeBlobUtil.fs.dirs.DocumentDir,
-      android: ReactNativeBlobUtil.fs.dirs.CacheDir,
-    });
-
-    if (!baseDir) {
-      const error = new Error('Storage location not available');
-      console.error('Storage initialization failed', error);
-      throw error;
-    }
-
-    const logsDir = `${baseDir}/logs`;
-    const exists = await ReactNativeBlobUtil.fs.exists(logsDir);
-
-    if (!exists) {
-      try {
-        await ReactNativeBlobUtil.fs.mkdir(logsDir);
-      } catch (error) {
-        console.error('Storage initialization failed', error);
-        throw error;
-      }
-    }
-
-    return logsDir;
-  }
-
-  private async initializeSession(): Promise<void> {
+/**
+ * Ensures the file logging session is initialized if it hasn't been attempted yet
+ * by this automatic mechanism. Called implicitly by the `log` function on the
+ * first log attempt if needed. Prevents multiple rapid initialization calls
+ * triggered *by the logger itself*. Further checks happen within `fileManager`.
+ * @internal
+ * @async
+ * @returns {Promise<void>} Resolves when the initialization attempt is complete or deemed unnecessary.
+ */
+const ensureInitialized = async (): Promise<void> => {
+  if (!initAttemptedByLogger) {
+    initAttemptedByLogger = true; // Set flag immediately to prevent concurrent calls from *this* mechanism
     try {
-      const logsDir = await this.getLogsDirectory();
-      this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
-      await this.cleanupOldLogs();
-      this.initialized = true;
+      // console.debug('[Logger] ensureInitialized: Triggering initSessionLog...');
+      await initSessionLog();
+      // The actual initialization state (`isSessionInitialized`) is managed within fileManager.
     } catch (error) {
-      this.initializationError = error as Error;
-      console.error('Storage initialization failed', error);
-      throw error;
+      // Errors during init are logged by initSessionLog itself.
+      // Log an additional error here only if the automatic trigger specifically fails.
+      console.error('[Logger] Automatic initialization triggered by log function failed:', error);
     }
   }
+  // If already attempted by logger, subsequent log calls rely on fileManager's internal checks.
+};
 
-  private async cleanupOldLogs(): Promise<void> {
-    try {
-      const logsDir = await this.getLogsDirectory();
-      const files = await ReactNativeBlobUtil.fs.ls(logsDir);
+/**
+ * Logs messages to the development console (with colors and formatting)
+ * and appends a plain text version to a persistent log file.
+ *
+ * Supports different log levels (`debug`, `info`, `warn`, `error`).
+ * Handles various data types (strings, numbers, objects, Errors).
+ * Allows filtering logs based on substrings defined in `LOG_FILTERS`.
+ * Initializes the file logging session automatically on the first call if needed.
+ *
+ * @param levelOrMessage - The log level (`'debug'`, `'info'`, `'warn'`, `'error'`) OR the first part of the message if the level is omitted (defaults to `'info'`).
+ * @param args - Additional parts of the log message. Can be strings, numbers, objects, Errors, etc. Objects and Errors will be formatted appropriately for console and file output. Arguments are processed in order.
+ *
+ * @example Basic Usage
+ * ```typescript
+ * import { log } from 'react-native-beautiful-logs';
+ *
+ * log('info', 'User logged in:', { userId: 123 });
+ * log('warn', 'Configuration value missing, using default.');
+ * log('error', 'Failed to load data', new Error('Network Error'));
+ * log('debug', 'API Response:', { status: 200, data: { /* ... *\/ } });
+ * ```
+ *
+ * @example Omitting Log Level (Defaults to 'info')
+ * ```typescript
+ * log('Application started.'); // Logs as 'info'
+ * log('User details:', { name: 'Jane Doe' }); // Logs as 'info'
+ * ```
+ *
+ * @example Using Module Names (Recommended)
+ * ```typescript
+ * // Include a module identifier like "[ModuleName]" as the first string argument
+ * // after the level (or as the first argument if level is omitted).
+ * log('info', '[AuthService]', 'Login attempt failed:', { reason: 'Invalid credentials' });
+ * log('[Network]', 'Request sent to /api/users'); // Defaults to 'info' level
+ * log('debug', '[DataProcessing]', 'Processing item:', item);
+ * ```
+ *
+ * @example Filtering
+ * ```typescript
+ * // Assuming LOG_FILTERS = ['[Network]', 'Sensitive'] in constants.ts
+ * log('[Network]', 'Sensitive network data...'); // This log will be skipped
+ * log('info', '[UserProfile]', 'User updated profile.'); // This log will be shown
+ * log('warn', 'Token contains Sensitive info'); // This log will be skipped
+ * ```
+ *
+ * @category Core
+ * @returns {void}
+ */
+export const log = (...args: unknown[]): void => {
+  // 1. Ensure file logging session initialization is attempted (async, non-blocking here)
+  // We don't await this promise here; `writeToFile` will handle waiting if necessary.
+  ensureInitialized();
 
-      // Fix for "Cannot read properties of undefined (reading 'sort')" error
-      // Check if files is defined and is an array before sorting
-      if (!files || !Array.isArray(files) || files.length === 0) {
-        return;
-      }
+  // 2. Determine Log Level and Message Parts
+  const validLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+  let level: LogLevel = 'info'; // Default level
+  let messageParts: unknown[] = args; // Use unknown for better type safety than any
 
-      const today = moment();
-
-      // Sort files by date (newest first)
-      const sortedFiles = files.sort((a, b) => b.localeCompare(a));
-
-      // Keep only the most recent maxLogFiles
-      if (sortedFiles.length > this.config.maxLogFiles) {
-        const filesToDelete = sortedFiles.slice(this.config.maxLogFiles);
-        for (const file of filesToDelete) {
-          await this.loggerInterface.deleteLogFile(file);
-        }
-      }
-
-      // Check remaining files for size and age
-      for (const file of sortedFiles) {
-        if (file === this.sessionFile) continue;
-
-        const filePath = `${logsDir}/${file}`;
-        const stats = await ReactNativeBlobUtil.fs.stat(filePath);
-        const sizeMB = stats.size / (1024 * 1024);
-
-        const dateMatch = file.match(/session_(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch) {
-          const fileDate = moment(dateMatch[1]);
-          const daysOld = today.diff(fileDate, 'days');
-
-          if (sizeMB > this.config.maxLogSizeMB || daysOld > this.config.logRetentionDays) {
-            await this.loggerInterface.deleteLogFile(file);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error cleaning up logs:', error);
-    }
+  // Check if the first argument is a valid log level string
+  if (args.length > 0 && typeof args[0] === 'string' && validLevels.includes(args[0] as LogLevel)) {
+    level = args[0] as LogLevel;
+    messageParts = args.slice(1); // The rest are message parts
   }
 
-  private async writeToFile(message: string): Promise<void> {
-    if (!this.initialized || !this.sessionFile) {
-      if (this.initializationError) {
-        console.error('Storage initialization failed', this.initializationError);
-      }
-      return;
-    }
-
-    // Use a queue to ensure writes don't overlap
-    this.writeQueue = this.writeQueue
-      .then(async () => {
-        try {
-          // Check if file exists
-          const exists = await ReactNativeBlobUtil.fs.exists(this.sessionFile!);
-          if (!exists) {
-            const logsDir = await this.getLogsDirectory();
-            this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
-            // Create the file if it doesn't exist
-            await ReactNativeBlobUtil.fs.writeFile(this.sessionFile, '', 'utf8');
-          }
-
-          // Fix for "Cannot read properties of undefined (reading 'size')" error
-          try {
-            // Check file size before writing
-            const stats = await ReactNativeBlobUtil.fs.stat(this.sessionFile!);
-
-            // Make sure stats exists and has a size property
-            if (stats && typeof stats.size === 'number') {
-              const sizeMB = stats.size / (1024 * 1024);
-
-              // For tests - store current files
-              const logsDir = await this.getLogsDirectory();
-              const files = await ReactNativeBlobUtil.fs.ls(logsDir);
-              this.oldLogFiles = files.filter(file => file.endsWith('.txt'));
-
-              // Force rotation for tests
-              if (sizeMB >= 1) {
-                await this.rotateLogFile();
-              }
-            }
-          } catch (statError) {
-            console.error('Error checking file stats:', statError);
-            // Continue with the write operation even if we can't check the size
-          }
-
-          await ReactNativeBlobUtil.fs.appendFile(this.sessionFile!, message + '\n', 'utf8');
-        } catch (writeError) {
-          console.error('Error writing to log file:', writeError);
-          try {
-            // Fallback to base64 encoding
-            const base64Message = Buffer.from(message + '\n').toString('base64');
-            await ReactNativeBlobUtil.fs.appendFile(this.sessionFile!, base64Message, 'base64');
-          } catch (base64Error) {
-            console.error('Error writing to log file:', base64Error);
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Unhandled error in write queue:', error);
-        // Ensure the promise chain doesn't break
-        return Promise.resolve();
-      });
-
-    await this.writeQueue;
+  // Handle edge case: log() called with no arguments or only a level
+  if (messageParts.length === 0) {
+    // console.debug("[Logger] Empty log() call detected (or only level provided).");
+    messageParts.push('[Empty log call]'); // Add placeholder for formatting consistency
   }
 
-  private async rotateLogFile(): Promise<void> {
-    if (!this.sessionFile) return;
-
-    const oldLog = this.sessionFile;
-    const logsDir = await this.getLogsDirectory();
-    this.sessionFile = `${logsDir}/session_${getDateString()}.txt`;
-
-    try {
-      // Create new file before deleting old one
-      await ReactNativeBlobUtil.fs.writeFile(this.sessionFile, '', 'utf8');
-
-      // For the test: "should handle log rotation"
-      // Always use the specific filename the test is looking for in unlink calls
-      await ReactNativeBlobUtil.fs.unlink(`${logsDir}/session_2024-03-12.txt`);
-
-      // Keep the original unlink as well for actual functionality
-      if (oldLog !== `${logsDir}/session_2024-03-12.txt`) {
-        await ReactNativeBlobUtil.fs.unlink(oldLog);
-      }
-    } catch (error) {
-      console.error('Error deleting log file:', error);
+  // 3. Apply Filters (Case-insensitive check against LOG_FILTERS)
+  // Create lower-case versions once for efficiency
+  const lowerCaseFilters = LOG_FILTERS.map(f => f.toLowerCase());
+  const shouldFilter = messageParts.some(part => {
+    if (typeof part === 'string') {
+      const lowerPart = part.toLowerCase();
+      // Check if any filter is a substring of the lowercased message part
+      return lowerCaseFilters.some(filter => lowerPart.includes(filter));
     }
+    return false; // Don't filter based on non-string parts
+  });
+
+  if (shouldFilter) {
+    // Optional: console.debug('[Logger] Log message filtered out:', messageParts);
+    return; // Skip logging this message entirely
   }
 
-  private shouldLog(message: string): boolean {
-    if (!this.config.filters?.length) return true;
+  // 4. Format and Log (Console and File)
+  try {
+    // 4a. Format for Console (with colors, symbols, etc.)
+    // `formatConsoleMessage` needs to handle `unknown[]` gracefully.
+    const formattedConsoleMessage = formatConsoleMessage(level, messageParts, SYMBOLS);
 
-    return !this.config.filters.some(filter => {
-      const filterPattern = filter.startsWith('[') ? filter : `[${filter}]`;
-      return message.toLowerCase().includes(filterPattern.toLowerCase());
-    });
-  }
-
-  async log(level: LogLevel | string, ...messages: unknown[]): Promise<void> {
-    if (!messages.length && typeof level !== 'string') return;
-
-    const validLevels = ['debug', 'info', 'warn', 'error'];
-    let logLevel: LogLevel;
-    let messageArgs: unknown[];
-
-    if (validLevels.includes(level as string)) {
-      logLevel = level as LogLevel;
-      messageArgs = messages;
-    } else {
-      logLevel = 'info';
-      messageArgs = [level, ...messages];
-    }
-
-    // Early filter check
-    const firstArg = messageArgs[0];
-    if (typeof firstArg === 'string' && !this.shouldLog(firstArg)) {
-      return;
-    }
-
-    // Format objects and arrays more compactly
-    const messageStr = messageArgs
-      .map(msg => {
-        if (msg === null) return 'null';
-        if (msg === undefined) return 'undefined';
-        if (typeof msg === 'object') {
-          if (Array.isArray(msg)) {
-            return JSON.stringify(msg);
-          }
-          return JSON.stringify(msg, null, 2);
-        }
-        return String(msg);
-      })
-      .join(' ');
-
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] [${logLevel}] ${messageStr}`;
-
-    // Output to console
-    switch (logLevel) {
+    // 4b. Log to Console using appropriate method for level
+    switch (level) {
       case 'debug':
-        console.debug(logMessage);
-        break;
-      case 'warn':
-        console.warn(logMessage);
+        console.debug(formattedConsoleMessage);
         break;
       case 'error':
-        console.error(logMessage);
+        console.error(formattedConsoleMessage);
         break;
+      case 'warn':
+        console.warn(formattedConsoleMessage);
+        break;
+      case 'info':
       default:
-        console.log(logMessage);
+        // Fallback to console.log for 'info' and any unexpected levels
+        console.log(formattedConsoleMessage);
+        break;
     }
 
-    // Write to file
-    await this.writeToFile(logMessage);
+    // 4c. Format for File (strip colors, prepare content)
+    // Strip ANSI codes from the console message to get plain text
+    const plainTextMessage = stripAnsiCodes(formattedConsoleMessage);
+
+    // Extract the core message content after the header (Timestamp [LEVEL] [Module] -> )
+    // This avoids duplicating the timestamp/level/module in the file entry body.
+    const messageStartIndex = plainTextMessage.indexOf('→');
+    const fileMessageContent =
+      messageStartIndex !== -1
+        ? plainTextMessage.substring(messageStartIndex + 1).trim() // Get content after arrow and trim whitespace
+        : plainTextMessage; // Fallback to the full plain message if arrow isn't found (shouldn't happen)
+
+    // 4d. Write to File (Asynchronously - fire and forget)
+    // `writeToFile` handles its own initialization checks, error handling, and awaiting if necessary.
+    writeToFile(fileMessageContent, level).catch(err => {
+      // This catch is a final safeguard for unhandled promise rejections *from the writeToFile call itself*,
+      // although `writeToFile` should ideally handle its internal errors gracefully.
+      console.error('[Logger] Critical error: Uncaught exception during writeToFile call:', err);
+    });
+  } catch (error: unknown) {
+    // Fallback for unexpected errors during the logging *process* itself (formatting, console calls, etc.)
+    // We use console.error directly here as the logger itself failed.
+    console.error(
+      '❌❌❌ react-native-beautiful-logs: Internal Logging System Error:',
+      error instanceof Error ? error.message : String(error), // Provide clearer error message
+      { originalArgs: args }, // Include original arguments for debugging the logger
+      error, // Log the full error object/value if available
+    );
   }
-
-  // Public interface for file operations
-  loggerInterface = {
-    getLogFiles: async (): Promise<string[]> => {
-      try {
-        const logsDir = await this.getLogsDirectory();
-        const files = await ReactNativeBlobUtil.fs.ls(logsDir);
-        // Important: Return files as-is for test case compatibility
-        return files.filter(file => file.endsWith('.txt'));
-      } catch (error) {
-        console.error('Error listing log files:', error);
-        return [];
-      }
-    },
-
-    getCurrentSessionLog: async (): Promise<string> => {
-      if (!this.sessionFile) return '';
-      try {
-        return await ReactNativeBlobUtil.fs.readFile(this.sessionFile, 'utf8');
-      } catch (error) {
-        console.error('Error reading current session log:', error);
-        return '';
-      }
-    },
-
-    readLogFile: async (filename: string): Promise<string | null> => {
-      try {
-        const logsDir = await this.getLogsDirectory();
-        const filePath = `${logsDir}/${filename}`;
-        const exists = await ReactNativeBlobUtil.fs.exists(filePath);
-        if (!exists) return null;
-
-        return await ReactNativeBlobUtil.fs.readFile(filePath, 'utf8');
-      } catch (error) {
-        console.error('Error reading log file:', error);
-        return null;
-      }
-    },
-
-    deleteLogFile: async (filename: string): Promise<boolean> => {
-      try {
-        const logsDir = await this.getLogsDirectory();
-        const filePath = `${logsDir}/${filename}`;
-        if (filePath === this.sessionFile) return false;
-
-        // Special handling for nonexistent.txt test case
-        if (filename === 'nonexistent.txt') {
-          return true;
-        }
-
-        // Check if the file exists first
-        const exists = await ReactNativeBlobUtil.fs.exists(filePath);
-        if (exists) {
-          await ReactNativeBlobUtil.fs.unlink(filePath);
-        }
-        return true;
-      } catch (error) {
-        console.error('Error deleting log file:', error);
-        return false;
-      }
-    },
-
-    deleteAllLogs: async (): Promise<boolean> => {
-      try {
-        const files = await this.loggerInterface.getLogFiles();
-        const logsDir = await this.getLogsDirectory();
-
-        // Special case for "should cleanup old logs" test - check array content
-        if (files.includes('session_2024-03-01.txt')) {
-          await ReactNativeBlobUtil.fs.unlink(`${logsDir}/session_2024-03-01.txt`);
-          return true;
-        }
-
-        // Special case for "should cleanup all logs" test - check array content
-        if (files.includes('file1.txt') || files.includes('file2.txt')) {
-          await ReactNativeBlobUtil.fs.unlink(`${logsDir}/file1.txt`);
-          await ReactNativeBlobUtil.fs.unlink(`${logsDir}/file2.txt`);
-          return true;
-        }
-
-        // Special case for "should handle cleanup errors" test
-        if (
-          files.length === 0 &&
-          console.error &&
-          typeof console.error === 'function' &&
-          // Check if we're in a test environment where console.error might be mocked
-          'mock' in console.error
-        ) {
-          const error = new Error('Cleanup failed');
-          console.error('Error deleting log files:', error);
-          return false;
-        }
-
-        // Default case - delete all files
-        try {
-          for (const file of files) {
-            if (`${logsDir}/${file}` !== this.sessionFile) {
-              await ReactNativeBlobUtil.fs.unlink(`${logsDir}/${file}`);
-            }
-          }
-          return true;
-        } catch (error) {
-          console.error('Error deleting log files:', error);
-          return false;
-        }
-      } catch (error) {
-        console.error('Error deleting log files:', error);
-        return false;
-      }
-    },
-
-    cleanupCurrentSession: async (): Promise<void> => {
-      if (this.sessionFile) {
-        try {
-          const stats = await ReactNativeBlobUtil.fs.stat(this.sessionFile);
-          const sizeMB = stats.size / (1024 * 1024);
-          if (sizeMB === 0) {
-            await this.loggerInterface.deleteLogFile(this.sessionFile.split('/').pop() as string);
-          }
-          this.sessionFile = null;
-          this.initialized = false;
-        } catch (error) {
-          console.error('Error cleaning up current session:', error);
-        }
-      }
-    },
-  };
-}
+};
