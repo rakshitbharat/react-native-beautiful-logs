@@ -38,9 +38,9 @@ jobs:
       
       - name: Version Bump and Publish
         run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           yarn version --patch
-          yarn config set npmAuthToken "${NPM_TOKEN}"
-          yarn publish --new-version $(node -p "require('./package.json').version") --non-interactive
+          yarn publish --access public --new-version $(node -p "require('./package.json').version")
           git push --follow-tags
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
