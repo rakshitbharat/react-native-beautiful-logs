@@ -174,9 +174,9 @@ export interface LoggerInterface {
 export interface LoggerConfig {
   /**
    * An array of strings to filter logs by. Logs containing any of these strings (case-insensitive)
-   * would be skipped if this configuration were active.
-   * Would override the default `LOG_FILTERS` constant if implemented.
+   * will be skipped. Call `configureLogger` to set this dynamically.
    * @see {@link LOG_FILTERS}
+   * @see {@link configureLogger}
    */
   logFilters?: string[];
 

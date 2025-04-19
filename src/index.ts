@@ -20,6 +20,8 @@ import {
   LoggerInterface as InternalLoggerInterface,
   LoggerConfig as InternalLoggerConfig,
 } from './types';
+// Import the setter function
+import { setLogFilters } from './constants';
 
 /**
  * Initializes the file logging session. This ensures the log directory exists,
@@ -160,27 +162,59 @@ const performAutoInitialization = async () => {
 // Trigger the async auto-initialization. It runs without blocking the module import.
 performAutoInitialization();
 
-// --- Potential Future Enhancement: Configuration ---
-// /**
-//  * @internal
-//  * Holds the current logger configuration (currently unused).
-//  */
-// let currentConfig: InternalLoggerConfig = {};
-// /**
-//  * Configures global logger settings. (Not yet implemented)
-//  * This function would allow overriding default constants like log filters, max files, etc.
-//  * Needs significant changes to make constants mutable or use a dedicated config service.
-//  *
-//  * @param {Partial<InternalLoggerConfig>} config - An object containing configuration options to override.
-//  * @category Configuration
-//  * @example
-//  * ```typescript
-//  * // configureLogger({ maxLogFiles: 10, logFilters: ['[Network]'] }); // Future possibility
-//  * ```
-//  */
-// export const configureLogger = (config: Partial<InternalLoggerConfig>) => {
-//   currentConfig = { ...currentConfig, ...config };
-//   // TODO: Apply config changes (e.g., update constants or internal state).
-//   // This would require making constants mutable or introducing a config module/service.
-//   console.warn('configureLogger function is defined but not yet implemented.');
-// };
+// --- Configuration ---
+
+/**
+ * @internal
+ * Holds the current logger configuration state. Currently only supports logFilters.
+ */
+let currentConfig: InternalLoggerConfig = {};
+
+/**
+ * Configures global logger settings. Currently, only supports updating log filters.
+ *
+ * @param {Partial<InternalLoggerConfig>} config - An object containing configuration options to override. Only `logFilters` is currently supported.
+ * @category Configuration
+ * @public
+ * @example Setting Log Filters
+ * ```typescript
+ * import { configureLogger, log } from 'react-native-beautiful-logs';
+ *
+ * // Initially, all logs might be shown
+ * log('info', '[Network]', 'Fetching data...');
+ *
+ * // Configure filters to hide network logs
+ * configureLogger({ logFilters: ['[Network]'] });
+ *
+ * // This log will now be filtered out
+ * log('info', '[Network]', 'Data fetched.');
+ * log('info', '[Auth]', 'User logged in.'); // This will still be shown
+ *
+ * // Clear filters
+ * configureLogger({ logFilters: [] });
+ * log('info', '[Network]', 'Another network call.'); // This will be shown again
+ * ```
+ */
+export const configureLogger = (config: Partial<InternalLoggerConfig>) => {
+  currentConfig = { ...currentConfig, ...config };
+
+  // Apply specific configurations
+  if (config.logFilters !== undefined) {
+    // Validate that logFilters is an array of strings
+    if (
+      Array.isArray(config.logFilters) &&
+      config.logFilters.every(item => typeof item === 'string')
+    ) {
+      setLogFilters(config.logFilters);
+      log('debug', '[LoggerConfig]', 'Log filters updated:', config.logFilters);
+    } else {
+      console.warn(
+        'react-native-beautiful-logs: Invalid logFilters provided to configureLogger. Expected string[]. Filters not updated.',
+        config.logFilters,
+      );
+    }
+  }
+
+  // Add handling for other config options here in the future
+  // e.g., if (config.maxLogFiles !== undefined) { ... }
+};

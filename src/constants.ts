@@ -27,10 +27,20 @@ import { LogLevel } from './types'; // Ensure LogLevel is imported if used here
  * ```
  * @category Configuration
  */
-export const LOG_FILTERS: string[] = [
+// Change from const to let and provide a default empty array
+export let LOG_FILTERS: string[] = [
   // `[Axios]`, // Example: Filter logs from Axios if too verbose
   // `[TEMP_DTC]`, // Example: Filter temporary diagnostic codes
 ];
+
+/**
+ * Function to update the log filters dynamically.
+ * @param newFilters - The new array of filter strings.
+ * @internal
+ */
+export const setLogFilters = (newFilters: string[]) => {
+  LOG_FILTERS = newFilters;
+};
 
 /**
  * ANSI escape codes for styling log output in compatible terminals (like React Native Metro bundler console).
