@@ -34,77 +34,70 @@ Tired of `console.log` clutter? `react-native-beautiful-logs` elevates your debu
 
 ## 🚀 Installation
 
-1.  **Install the library:**
+```bash
+# Using npm
+npm install react-native-beautiful-logs react-native-blob-util
 
-    ```bash
-    # Using npm
-    npm install react-native-beautiful-logs
+# Using yarn
+yarn add react-native-beautiful-logs react-native-blob-util
+```
 
-    # Using yarn
-    yarn add react-native-beautiful-logs
+### iOS Setup
 
-    # Using bun
-    bun add react-native-beautiful-logs
-    ```
+```bash
+cd ios && pod install
+```
 
-2.  **Install Required Peer Dependency:** This library uses `react-native-blob-util` for file operations.
+### Additional Setup
 
-    ```bash
-    npm install react-native-blob-util
-    # or
-    yarn add react-native-blob-util
-    # or
-    bun add react-native-blob-util
-    ```
+No additional setup required! The library will initialize automatically when imported.
 
-3.  **Link Native Modules (for react-native-blob-util):** Follow the installation instructions for `react-native-blob-util`, which usually involves `cd ios && pod install`.
-
-## 💡 Quick Start
+## 💡 Basic Usage
 
 ```typescript
-import { log, initSessionLog, loggerInterface } from 'react-native-beautiful-logs';
-import type { LogLevel } from 'react-native-beautiful-logs'; // Import types if needed
+import { log } from 'react-native-beautiful-logs';
 
-// Optional but recommended: Initialize early in your app (e.g., index.js or App.tsx)
-// This ensures the log file is ready immediately.
-initSessionLog().then(success => {
-  if (success) {
-    log('[AppSetup]', 'File logging session initialized successfully!');
-  } else {
-    console.warn('[AppSetup] File logging session failed to initialize.'); // Use console directly if logger failed
-  }
-});
+// Simple logs (default level: info)
+log('Hello world');
+log('[MyComponent]', 'Component mounted');
 
-// --- Basic Logging ---
+// With specific log levels
+log('debug', '[Network]', 'Request started', { url: '/api/users' });
+log('info', '[Auth]', 'User logged in successfully');
+log('warn', '[API]', 'Rate limit approaching');
+log('error', '[Database]', 'Connection failed', new Error('Timeout'));
 
-// Log simple messages (defaults to 'info' level)
-log('Application mounted.');
+// Logging objects
+const data = { id: 1, status: 'active' };
+log('info', '[Data]', 'Current state:', data);
 
-// Use module tags for context (still 'info' level)
-log('[AuthScreen]', 'Login button pressed.');
+// Error handling
+try {
+  throw new Error('Operation failed');
+} catch (error) {
+  log('error', '[ErrorHandler]', 'Caught error:', error);
+}
+```
 
-// --- Logging with Levels & Data ---
+## 📁 Working with Log Files
 
-const user = { id: 101, name: 'Alice', roles: ['admin', 'editor'] };
-const apiError = new Error('Network request failed: Status 404');
+```typescript
+import { loggerInterface } from 'react-native-beautiful-logs';
 
-log('debug', '[APIClient]', 'Sending request to /users/101');
-log('info', '[AuthScreen]', 'Login successful for user:', user.name, { userId: user.id });
-log('warn', '[Settings]', 'Deprecated theme value detected, using default.');
-log('error', '[APIClient]', 'Failed to fetch user profile:', apiError);
+async function exportLogs() {
+  // Get all log files (sorted by date, newest first)
+  const files = await loggerInterface.getLogFiles();
 
-// --- Accessing Log Files ---
-async function shareLatestLog() {
-  const files = await loggerInterface.getLogFiles(); // Sorted newest first
+  // Read current session's logs
+  const currentLogs = await loggerInterface.getCurrentSessionLog();
+
+  // Read a specific log file
   if (files.length > 0) {
-    const latestLog = files[0];
-    const content = await loggerInterface.readLogFile(latestLog);
-    if (content) {
-      console.log(`Sharing log file: ${latestLog}`);
-      // Add your sharing logic here (e.g., using react-native-share)
-      // Share.open({ title: 'App Logs', message: 'Debug logs attached', url: `file://${loggerInterface.logDirectoryPath}/${latestLog}` });
-    }
+    const oldLogs = await loggerInterface.readLogFile(files[0]);
   }
+
+  // Clean up old logs
+  await loggerInterface.deleteAllLogs();
 }
 ```
 
