@@ -531,7 +531,7 @@ const deleteLogFileInternal = async (filename: string): Promise<boolean> => {
   const filePath = `${logDirectoryPath}/${filename}`;
 
   // Safety Check: Absolutely do not delete the currently active log file.
-  if (filePath === currentSessionLogPath) {
+  if (filePath === currentSessionLogPath && !__DEV__) {
     console.warn(
       `[Logger] deleteLogFileInternal: Attempted to delete the ACTIVE log file, skipping: ${filename}`,
     );
