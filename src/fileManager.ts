@@ -226,8 +226,6 @@ export const initSessionLog = async (): Promise<boolean> => {
             : `\n=== App Session Resumed at ${timestamp} ===\n`; // App restart within same date window
           await appendToFile(filePath, sessionMarker); // Use internal append helper
 
-          console.log(`[Logger] Session initialized. Logging to: ${currentSessionLogPath}`);
-
           // Perform cleanup *after* successful initialization
           // Run cleanup asynchronously; don't block initialization return.
           cleanupOldLogs().catch(cleanupError => {
