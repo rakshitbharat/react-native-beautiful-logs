@@ -206,7 +206,6 @@ export const configureLogger = (config: Partial<InternalLoggerConfig>) => {
       config.logFilters.every(item => typeof item === 'string')
     ) {
       setLogFilters(config.logFilters);
-      log('debug', '[LoggerConfig]', 'Log filters updated:', config.logFilters);
     } else {
       console.warn(
         'react-native-beautiful-logs: Invalid logFilters provided to configureLogger. Expected string[]. Filters not updated.',
